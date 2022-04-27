@@ -4,14 +4,14 @@ import "./App.css";
 import abi from "./utils/MessageBoard.json";
 
 const App = () => {
-
   //state variables
   const [currentAccount, setCurrentAccount] = useState("");
   const [messageCount, setMessageCount] = useState(0);
   const [newMessage, setNewMessage] = useState("");
   const [allMessages, setAllMessages] =useState([]);
+  const [loading, setLoading] = useState(false);
   
-  //variables that holds the address and ABI of the contract
+  //variables that holds the contract address and ABI
   const contractAddress = "0xd449A9Cd387C13fdbD177bb7af7d0Ee1a42d57fa";
   const contractABI = abi.abi; 
 
@@ -39,7 +39,6 @@ const App = () => {
     }
   }  
 
-  // implement connectWallet method
   const connectWallet = async () => {
     try {
       const { ethereum } = window;
@@ -58,50 +57,80 @@ const App = () => {
     }
   }
   
-  const totalMessageCount = async () => {
-    const provider = new ethers.providers.Web3Provider(ethereum);
-    const signer = provider.getSigner();
-    const messageBoardContract = new ethers.Contract(contractAddress, contractABI, signer);
-
-    let count = await messageBoardContract.getTotalMessages();
-    console.log("Retrieved total message count... ", count.toNumber());
-    setMessageCount(count.toNumber());
+  const getTotalMessageCount = async () => {
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const messageBoardContract = new ethers.Contract(contractAddress, contractABI, signer);
+    
+        let count = await messageBoardContract.getTotalMessages();
+        console.log("Retrieved total message count... ", count.toNumber());
+        setMessageCount(count.toNumber());
+      } else {
+        console.log("Ethereum object doesn't exist!");
+      }
+    } catch (error) {
+        console.log(error);
+    }
   }
   
   const message = async () => {
-    const provider = new ethers.providers.Web3Provider(ethereum);
-    const signer = provider.getSigner();
-    const messageBoardContract = new ethers.Contract(contractAddress, contractABI, signer);
-
-    const messageTxn = await messageBoardContract.message(message);
-    console.log("Mining... ", messageTxn.hash);
-    await messageTxn.wait();
-    console.log("Mined -- ", messageTxn.hash);
-    console.log("Message is: ", messageTxn);
-  }
-
-  async function getAllMessages() {
-    const provider = new ethers.providers.Web3Provider;
-    const signer = provider.getSigner();
-    const messageBoardContract = new ethers.Contract(contractAddress, contractABI, signer);
-  
-    let allMessages = await messageBoardContract.getAllMessages();
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const messageBoardContract = new ethers.Contract(contractAddress, contractABI, signer);
     
-    let messagesCleaned = [];
-    allMessages.forEach(message => {
-      messagesCleaned.push({
-        address: message.user,
-        timestamp: new Date(messsage.timestamp *1000),
-        message: message.message
-      });
-    });   
-    setAllMessages(messagesCleaned);
+        const messageTxn = await messageBoardContract.message(newMessage);
+        console.log("Mining... ", messageTxn.hash);
+        
+        await messageTxn.wait();
+        console.log("Mined -- ", messageTxn.hash);
+        
+        setNewMessage("");
+      } else {
+        console.log("Ethereum object doesn't exist!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
   }
+
+  const getAllMessages = async () => {
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const messageBoardContract = new ethers.Contract(contractAddress, contractABI, signer);
+      
+        const messages = await messageBoardContract.getAllMessages();
+        
+        let messagesCleaned = [];
+        messages.forEach(message => {
+          messagesCleaned.push({
+            address: message.user,
+            timestamp: new Date(message.timestamp *1000),
+            message: message.message
+          });
+        });   
+        setAllMessages(messagesCleaned);
+      } else {
+        console.log("Ethereum object doesn't exist!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  
   
   //run the function when page loads
   useEffect(() => {
     checkIfWalletIsConnected();
-    totalMessageCount();
+    getTotalMessageCount();
     getAllMessages();
     }, [])
   
