@@ -10,6 +10,7 @@ const App = () => {
   const [newMessage, setNewMessage] = useState("");
   const [allMessages, setAllMessages] =useState([]);
   const [loading, setLoading] = useState(false);
+  const [contractBalance, setContractBalance] = useState(0);
   
   //variables that holds the contract address and ABI
   const contractAddress = "0xd449A9Cd387C13fdbD177bb7af7d0Ee1a42d57fa";
@@ -54,6 +55,25 @@ const App = () => {
       setCurrentAccount(accounts[0]);
     } catch (error) {
       console.log(error)
+    }
+  }
+
+  const getContractBalance = async () => {
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const messageBoardContract = new ethers.Contract(contractAddress, contractABI, signer);
+    
+        let balance = await provider.getBalance(contractAddress);
+        console.log("Retrieved contract balance... ", ethers.utils.formatEther(balance));
+        setContractBalance(ethers.utils.formatEther(balance));
+      } else {
+        console.log("Ethereum object doesn't exist!");
+      }
+    } catch (error) {
+        console.log(error);
     }
   }
   
@@ -132,6 +152,7 @@ const App = () => {
     checkIfWalletIsConnected();
     getTotalMessageCount();
     getAllMessages();
+    getContractBalance();
     }, [])
   
   
@@ -143,7 +164,7 @@ const App = () => {
         </div>
 
         <div className="bio">
-          I am Grant and I am learning solidity. I have {messageCount} messages. Connect your Ethereum wallet and drop a message. You may even win some ETH! 
+          I am Grant and I am learning solidity. I have {messageCount} messages. Connect your Ethereum wallet and drop a message. You may even win some ETH! Contract balance: {contractBalance} ETH.
         </div>
         <br></br>
         
